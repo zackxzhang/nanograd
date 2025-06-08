@@ -5,9 +5,36 @@
 [![License](https://img.shields.io/github/license/zackxzhang/nanograd)](https://opensource.org/licenses/BSD-3-Clause)
 [![Last Commit](https://img.shields.io/github/last-commit/zackxzhang/nanograd)](https://github.com/zackxzhang/nanograd)
 
-A conceptual implementation of autograd
+**nanograd** is a conceptual implementation of automatic differentiation
 
-- illustrate the fundamental principle behind automatic differentiation
+- illustrate fundamental principles behind differentiable programming
+    - **nanograd** resembles Torch (dynamic, global, object-oriented)
+    - ... more than it resembles Jax (static, local, functional)
 - trace gradients through the directed acyclic graph of tensors and operators
     - leaves: parameters (tensors with gradient) and variables (tensors without gradient)
     - branches: operators that compose parameters, variables and other operators
+
+
+#### example
+- linear regression [here](./ols.py)
+```python
+from nanograd import Variable, Parameter, Optimizer
+
+...
+
+# model
+t = Variable (t, tag='t')
+x = Variable (x, tag='x')
+w = Parameter(w, tag='w')
+y = x @ w
+
+# optimizer
+optim = Optimizer(alpha=0.1)
+
+# training
+for _ in range(50):
+    loss = squared_error(y, t)
+    trace(loss, zero)
+    params, grads = trace(loss, back)
+    optim.step(params, grads)
+```
