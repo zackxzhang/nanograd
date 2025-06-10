@@ -76,52 +76,6 @@ def trace(tensor: Tensor, hook: Callable):
     return parameters, gradients
 
 
-# class Loss(UnaryOperator):
-
-#     def __init__(self, prediction: Operator, target: Variable):
-#         super().__init__(prediction)
-#         self.y = prediction
-#         self.t = target
-
-#     def __repr__(self) -> str:
-#         return (
-#             self.__class__.__name__ +
-#             f"(prediction={self.y}, target={self.t})"
-#         )
-
-#     @property
-#     def n(self):
-#         return self.t.val.shape[0]
-
-
-# class SquaredError(Loss):
-
-#     @property
-#     def val(self):
-#         n = self.n
-#         u = Variable(np.ones((1,n)))
-#         l = u @ (self.t - self.y) ** 2 * (1/n)
-#         return l.val.item()
-
-#     def vjp(self, v: Tensor):
-#         if self.y.gradable:
-#             self.y.grad += (self.y.val - self.t.val) * (2/self.n)
-
-
-# class CrossEntropy(Loss):
-
-#     @property
-#     def val(self):
-#         n = self.n
-#         u = Variable(np.ones((1,n)))
-#         l = u @ (self.t * log(self.y)) * (-1/n)
-#         return l.val.item()
-
-#     def vjp(self, v: Tensor):
-#         if self.y.gradable:
-#             self.y.grad += (self.t.val / self.y.val) * (-1/self.n)
-
-
 class Loss(UnaryOperator):
 
     y: Operator
@@ -160,7 +114,7 @@ class CrossEntropy(Loss):
         self.t = target
         n = self.t.val.shape[0]
         u = Variable(np.ones((1,n)))
-        op = u @ (self.t * log(self.y)) * (-1/n)
+        op = u @ (self.t * log(self.y) + (1.-self.t) * log(1.-self.y)) * (-1./n)
         super().__init__(op)
 
 

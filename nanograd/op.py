@@ -108,6 +108,9 @@ class Tensor(ABC):
                 'an integer or a float as exponent'
             )
 
+    def __neg__(self):
+        return self * (-1.)
+
     @property
     def T(self):
         return Transpose(self)
@@ -161,7 +164,7 @@ class Parameter(Tensor):
 class Operator(Tensor):
 
     @abstractmethod
-    def vjp(self, v: Tensor):
+    def vjp(self, v: np.ndarray):
         pass
 
 
@@ -216,7 +219,7 @@ class Sum(BinaryOperator):
     def val(self):
         return self.operand_1.val + self.operand_2.val
 
-    def vjp(self, v: Tensor):
+    def vjp(self, v: np.ndarray):
         if self.operand_1.gradable:
             self.operand_1.grad += v
         if self.operand_2.gradable:
@@ -232,7 +235,7 @@ class Difference(BinaryOperator):
     def val(self):
         return self.operand_1.val - self.operand_2.val
 
-    def vjp(self, v: Tensor):
+    def vjp(self, v: np.ndarray):
         if self.operand_1.gradable:
             self.operand_1.grad += v
         if self.operand_2.gradable:
@@ -248,7 +251,7 @@ class Product(BinaryOperator):
     def val(self):
         return self.operand_1.val * self.operand_2.val
 
-    def vjp(self, v: Tensor):
+    def vjp(self, v: np.ndarray):
         if self.operand_1.gradable:
             j = self.operand_2.val
             self.operand_1.grad += v * j
@@ -266,7 +269,7 @@ class MatrixProduct(BinaryOperator):
     def val(self):
         return self.operand_1.val @ self.operand_2.val
 
-    def vjp(self, v: Tensor):
+    def vjp(self, v: np.ndarray):
         if self.operand_1.gradable:
             j = self.operand_2.val
             self.operand_1.grad += v @ j.T
@@ -284,7 +287,7 @@ class Quotient(BinaryOperator):
     def val(self):
         return self.operand_1.val / self.operand_2.val
 
-    def vjp(self, v: Tensor):
+    def vjp(self, v: np.ndarray):
         if self.operand_1.gradable:
             j = 1 / self.operand_2.val
             self.operand_1.grad += v * j
@@ -310,39 +313,9 @@ class Power(UnaryOperator):
     def val(self):
         return self.operand.val ** self.exponent
 
-    def vjp(self, v: Tensor):
+    def vjp(self, v: np.ndarray):
         if self.operand.gradable:
             j = self.exponent * self.operand.val ** (self.exponent - 1)
-            self.operand.grad += v * j
-
-
-class Exponential(UnaryOperator):
-
-    def __repr__(self) -> str:
-        return f'exp({self.operand})'
-
-    @property
-    def val(self):
-        return np.exp(self.operand.val)
-
-    def vjp(self, v: Tensor):
-        if self.operand.gradable:
-            j = self.val
-            self.operand.grad += v * j
-
-
-class Logarithm(UnaryOperator):
-
-    def __repr__(self) -> str:
-        return f'log({self.operand})'
-
-    @property
-    def val(self):
-        return np.log(self.operand.val)
-
-    def vjp(self):
-        if self.operand.gradable:
-            j = 1 / self.operand.val
             self.operand.grad += v * j
 
 
@@ -355,9 +328,54 @@ class Transpose(UnaryOperator):
     def val(self):
         return self.operand.val.T
 
-    def vjp(self, v: Tensor):
+    def vjp(self, v: np.ndarray):
         if self.operand.gradable:
             self.operand.grad += v.T
+
+
+class Mean(UnaryOperator):
+
+    def __repr__(self) -> str:
+        return f'mean({self.operand})'
+
+    @property
+    def val(self):
+        return np.mean(self.operand.val, axis=0)
+
+    def vjp(self, v: np.ndarray):
+        if self.operand.gradable:
+            n = self.operand.val.shape[0]
+            self.operand.grad += np.ones((n, 1)) / n
+
+
+class Logarithm(UnaryOperator):
+
+    def __repr__(self) -> str:
+        return f'log({self.operand})'
+
+    @property
+    def val(self):
+        return np.log(self.operand.val)
+
+    def vjp(self, v: np.ndarray):
+        if self.operand.gradable:
+            j = 1 / self.operand.val
+            self.operand.grad += v * j
+
+
+class Exponential(UnaryOperator):
+
+    def __repr__(self) -> str:
+        return f'exp({self.operand})'
+
+    @property
+    def val(self):
+        return np.exp(self.operand.val)
+
+    def vjp(self, v: np.ndarray):
+        if self.operand.gradable:
+            j = self.val
+            self.operand.grad += v * j
 
 
 class ReLU(UnaryOperator):
@@ -369,7 +387,7 @@ class ReLU(UnaryOperator):
     def val(self):
         return np.maximum(self.operand.val, 0.)
 
-    def vjp(self, v: Tensor):
+    def vjp(self, v: np.ndarray):
         if self.operand.gradable:
             j = self.operand.val > 0.
             self.operand.grad += v * j
@@ -384,14 +402,14 @@ class TanH(UnaryOperator):
     def val(self):
         return np.tanh(self.operand.val)
 
-    def vjp(self):
+    def vjp(self, v: np.ndarray):
         if self.operand.gradable:
             j = 1 - self.val ** 2
             self.operand.grad += v * j
 
 
 def _sigmoid(x):
-    return 1 / (1 + np.exp(-x))
+    return 1. / (1. + np.exp(-x))
 
 
 class Sigmoid(UnaryOperator):
@@ -403,7 +421,7 @@ class Sigmoid(UnaryOperator):
     def val(self):
         return _sigmoid(self.operand.val)
 
-    def vjp(self, v: Tensor):
+    def vjp(self, v: np.ndarray):
         if self.operand.gradable:
             s = self.val
             j = s * (1 - s)
@@ -424,7 +442,7 @@ class Softmax(UnaryOperator):
     def val(self):
         return _softmax(self.operand.val)
 
-    def vjp(self, v: Tensor):
+    def vjp(self, v: np.ndarray):
         if self.operand.gradable:
             n = len(self.operand)
             s = self.val
