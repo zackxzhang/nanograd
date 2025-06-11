@@ -11,9 +11,9 @@ class Optimizer:
     def __init__(self, alpha: float):
         self.alpha = alpha
 
-    def step(self, parameters, gradients):
-        for param, grad in zip(parameters, gradients):
-            param._val -= grad * self.alpha
+    def step(self, parameters: list[Parameter]):
+        for param in parameters:
+            param._val -= param.grad * self.alpha
 
 
 def Back(parameters: list):

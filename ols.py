@@ -44,8 +44,7 @@ for _ in range(S):
     trace(loss, zero)
     params: list[Parameter] = list()
     trace(loss, Back(params))
-    grads = [param.grad for param in params]
-    optim.step(params, grads)
+    optim.step(params)
 
 
 # after training
