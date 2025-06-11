@@ -35,6 +35,8 @@ optim = Optimizer(alpha=0.1)
 for _ in range(50):
     loss = squared_error(y, t)
     trace(loss, zero)
-    params, grads = trace(loss, back)
+    params: list[Parameter] = list()
+    trace(loss, Back(params))
+    grads = [param.grad for param in params]
     optim.step(params, grads)
 ```

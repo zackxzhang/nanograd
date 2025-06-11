@@ -345,7 +345,7 @@ class Mean(UnaryOperator):
     def vjp(self, v: np.ndarray):
         if self.operand.gradable:
             n = self.operand.val.shape[0]
-            self.operand.grad += np.ones((n, 1)) / n
+            self.operand.grad += np.ones((n, 1)) @ v / n
 
 
 class Logarithm(UnaryOperator):
@@ -450,6 +450,10 @@ class Softmax(UnaryOperator):
             outer_s = np.einsum('bi,bj->bij', s, s)
             j = diag_s - outer_s
             self.operand.grad += v * j
+
+
+def mean(tensor: Tensor) -> Operator:
+    return Mean(tensor)
 
 
 def exp(tensor: Tensor) -> Operator:

@@ -1,7 +1,7 @@
 import numpy as np                                                # type: ignore
 from nanograd import (
     Variable, Parameter, squared_error,
-    Optimizer, trace, zero, back,
+    Optimizer, trace, zero, Back,
 )
 from util import RandomSeed
 
@@ -42,7 +42,9 @@ for _ in range(S):
     loss = squared_error(y, t)
     print(f"loss={loss.val:.6f}")
     trace(loss, zero)
-    params, grads = trace(loss, back)
+    params: list[Parameter] = list()
+    trace(loss, Back(params))
+    grads = [param.grad for param in params]
     optim.step(params, grads)
 
 
