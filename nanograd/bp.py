@@ -2,7 +2,7 @@ import numpy as np                                                # type: ignore
 from typing import Callable
 from .op import (
     Tensor, Operator, UnaryOperator, BinaryOperator,
-    Variable, Parameter, log
+    Variable, Parameter, log, mean,
 )
 
 
@@ -16,9 +16,13 @@ class Optimizer:
             param._val -= grad * self.alpha
 
 
-def back(tensor: Tensor):
-    if isinstance(op := tensor, Operator) and op.gradable:
-        op.vjp(op.grad)
+def Back(parameters: list):
+    def back(tensor: Tensor):
+        if isinstance(op := tensor, Operator) and op.gradable:
+            op.vjp(op.grad)
+        if isinstance(pm := tensor, Parameter):
+            parameters.append(pm)
+    return back
 
 
 def zero(tensor: Tensor):
@@ -35,8 +39,8 @@ def leaf(tensor: Tensor):
         print(f"variable: {tensor}")
 
 
-def walk(nodes: list[str], edges: list[tuple[str, str]]):
-    def tape(tensor: Tensor):
+def Walk(nodes: list[str], edges: list[tuple[str, str]]):
+    def walk(tensor: Tensor):
         if isinstance(tensor, (Parameter, Variable)):
             nodes.append(str(tensor))
         elif isinstance(tensor, UnaryOperator):
@@ -48,32 +52,64 @@ def walk(nodes: list[str], edges: list[tuple[str, str]]):
             edges.append((str(tensor), str(tensor.operand_2)))
         else:
             raise TypeError(f"unexpected type {type(tensor)} value {tensor}")
-        return nodes, edges
-    return tape
+    return walk
 
 
-def trace(tensor: Tensor, hook: Callable):
-    parameters = list()
-    gradients  = list()
+def Punch(exits: dict, time: int = 0):
+    def punch(tensor: Tensor):
+        nonlocal time
+        time += 1
+        exits[tensor] = time
+    return punch
+
+
+def dfs(tensor: Tensor, visits: set, punch: Callable):
+    if tensor in visits:
+        return
+    visits.add(tensor)
+    if isinstance(tensor, (Parameter, Variable)):
+        pass
+    elif isinstance(tensor, UnaryOperator):
+        dfs(tensor.operand, visits, punch)
+    elif isinstance(tensor, BinaryOperator):
+        dfs(tensor.operand_1, visits, punch)
+        dfs(tensor.operand_2, visits, punch)
+    else:
+        raise TypeError(f"unexpected type {type(tensor)} value {tensor}")
+    punch(tensor)
+
+
+def toposort(tensor: Tensor):
+    visits: set[Tensor] = set()
+    exits: dict[Tensor, int] = dict()
+    punch = Punch(exits)
+    dfs(tensor, visits, punch)
+    topo = sorted(visits, key=exits.__getitem__, reverse=True)
+    return topo
+
+
+def bfs(tensor: Tensor):
+    visits: set[Tensor] = set()
     q = [tensor]
     while q:
         t = q.pop(0)
+        if t in visits:
+            continue
+        if isinstance(t, (Variable, Parameter)):
+            pass
         if isinstance(t, UnaryOperator):
-            hook(t)
             q.append(t.operand)
         elif isinstance(t, BinaryOperator):
-            hook(t)
             q.append(t.operand_1)
             q.append(t.operand_2)
-        elif isinstance(t, Variable):
-            hook(t)
-        elif isinstance(t, Parameter):
-            hook(t)
-            parameters.append(t)
         else:
             raise TypeError(f"unexpected type {type(t)} value {t}")
-    gradients = [param.grad for param in parameters]
-    return parameters, gradients
+
+
+def trace(tensor: Tensor, hook: Callable):
+    tensors = toposort(tensor)
+    for t in tensors:
+        hook(t)
 
 
 class Loss(UnaryOperator):
@@ -91,9 +127,9 @@ class Loss(UnaryOperator):
     def val(self):
         return self.operand.val.item()
 
-    def vjp(self, v: Tensor):
+    def vjp(self, v: np.ndarray):
         if self.operand.gradable:
-            self.operand.grad += np.array([[1.]])
+            self.operand.grad += v * np.array([[1.]])
 
 
 class SquaredError(Loss):
@@ -101,10 +137,7 @@ class SquaredError(Loss):
     def __init__(self, prediction: Operator, target: Variable):
         self.y = prediction
         self.t = target
-        n = self.t.val.shape[0]
-        u = Variable(np.ones((1,n)))
-        op = u @ ((self.t - self.y) ** 2) * (1/n)
-        super().__init__(op)
+        super().__init__(mean((self.t - self.y) ** 2))
 
 
 class CrossEntropy(Loss):
@@ -112,10 +145,9 @@ class CrossEntropy(Loss):
     def __init__(self, prediction: Operator, target: Variable):
         self.y = prediction
         self.t = target
-        n = self.t.val.shape[0]
-        u = Variable(np.ones((1,n)))
-        op = u @ (self.t * log(self.y) + (1.-self.t) * log(1.-self.y)) * (-1./n)
-        super().__init__(op)
+        super().__init__(
+            - mean( (self.t * log(self.y) + (1.-self.t) * log(1.-self.y)) )
+        )
 
 
 def squared_error(prediction: Operator, target: Variable):
