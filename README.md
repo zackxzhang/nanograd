@@ -37,6 +37,28 @@ for _ in range(50):
     trace(loss, zero)
     params: list[Parameter] = list()
     trace(loss, Back(params))
-    grads = [param.grad for param in params]
-    optim.step(params, grads)
+    optim.step(params)
+```
+- logistic regression [here](./glm.py)
+```python
+from nanograd import Variable, Parameter, Optimizer
+
+...
+
+# model
+t = Variable (t, tag='t')
+x = Variable (x, tag='x')
+w = Parameter(w, tag='w')
+y = sigmoid(x @ w)
+
+# optimizer
+optim = Optimizer(alpha=0.5)
+
+# training
+for _ in range(800):
+    loss = cross_entropy(y, t)
+    trace(loss, zero)
+    params: list[Parameter] = list()
+    trace(loss, Back(params))
+    optim.step(params)
 ```
