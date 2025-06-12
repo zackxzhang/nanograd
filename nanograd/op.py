@@ -340,12 +340,26 @@ class Mean(UnaryOperator):
 
     @property
     def val(self):
-        return np.mean(self.operand.val, axis=0)
+        return np.mean(self.operand.val, axis=0, keepdims=False)
 
     def vjp(self, v: np.ndarray):
         if self.operand.gradable:
             n = self.operand.val.shape[0]
-            self.operand.grad += np.ones((n, 1)) @ v / n
+            self.operand.grad += np.tile(v.T / n, (n,) + (1,) * v.ndim)
+
+
+class Item(UnaryOperator):
+
+    def __repr__(self) -> str:
+        return f'item({self.operand})'
+
+    @property
+    def val(self):
+        return self.operand.val.item()
+
+    def vjp(self, v: float):
+        if self.operand.gradable:
+            self.operand.grad += v * np.ones_like(self.operand.val, dtype=float)
 
 
 class Logarithm(UnaryOperator):
@@ -454,6 +468,10 @@ class Softmax(UnaryOperator):
 
 def mean(tensor: Tensor) -> Operator:
     return Mean(tensor)
+
+
+def item(tensor: Tensor) -> Operator:
+    return Item(tensor)
 
 
 def exp(tensor: Tensor) -> Operator:

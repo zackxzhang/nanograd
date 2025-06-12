@@ -2,7 +2,7 @@ import numpy as np                                                # type: ignore
 from typing import Callable
 from .op import (
     Tensor, Operator, UnaryOperator, BinaryOperator,
-    Variable, Parameter, log, mean,
+    Variable, Parameter, log, mean, item,
 )
 
 
@@ -125,11 +125,11 @@ class Loss(UnaryOperator):
 
     @property
     def val(self):
-        return self.operand.val.item()
+        return self.operand.val
 
-    def vjp(self, v: np.ndarray):
+    def vjp(self, v: float):
         if self.operand.gradable:
-            self.operand.grad += v * np.array([[1.]])
+            self.operand.grad += v
 
 
 class SquaredError(Loss):
@@ -137,7 +137,7 @@ class SquaredError(Loss):
     def __init__(self, prediction: Operator, target: Variable):
         self.y = prediction
         self.t = target
-        super().__init__(mean((self.t - self.y) ** 2))
+        super().__init__(item(mean((self.t - self.y) ** 2)))
 
 
 class CrossEntropy(Loss):
@@ -146,7 +146,9 @@ class CrossEntropy(Loss):
         self.y = prediction
         self.t = target
         super().__init__(
-            - mean( (self.t * log(self.y) + (1.-self.t) * log(1.-self.y)) )
+            - item( mean(
+                self.t * log(self.y) + (1.-self.t) * log(1.-self.y)
+            ) )
         )
 
 
