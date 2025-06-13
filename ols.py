@@ -1,7 +1,7 @@
 import numpy as np                                                # type: ignore
 from nanograd import (
-    Variable, Parameter, squared_error,
-    Optimizer, trace, zero, Back,
+    Variable, Parameter, squared_error, lasso,
+    Optimizer, trace, Zero, Back,
 )
 from util import RandomSeed
 
@@ -39,9 +39,9 @@ print(f"random:  {w.val.flatten()}")
 
 # training loop
 for _ in range(S):
-    loss = squared_error(y, t)
+    loss = squared_error(y, t) + 0.1 * lasso(w)
     print(f"loss={loss.val:.6f}")
-    trace(loss, zero)
+    trace(loss, Zero())
     params: list[Parameter] = list()
     trace(loss, Back(params))
     optim.step(params)

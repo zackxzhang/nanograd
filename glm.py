@@ -1,7 +1,7 @@
 import numpy as np                                                # type: ignore
 from nanograd import (
     Variable, Parameter, sigmoid, cross_entropy,
-    Optimizer, trace, zero, Back,
+    Optimizer, trace, Zero, Back,
 )
 from util import RandomSeed
 
@@ -41,7 +41,7 @@ print(f"random:  {w.val.flatten()}")
 for _ in range(S):
     loss = cross_entropy(y, t)
     print(f"loss={loss.val:.6f}")
-    trace(loss, zero)
+    trace(loss, Zero())
     params: list[Parameter] = list()
     trace(loss, Back(params))
     optim.step(params)
