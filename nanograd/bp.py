@@ -2,7 +2,7 @@ import numpy as np                                                # type: ignore
 from typing import Callable
 from .op import (
     Tensor, Operator, UnaryOperator, BinaryOperator,
-    Variable, Parameter, log, mean, item,
+    Variable, Parameter, log, summation, mean, absolute, item,
 )
 
 
@@ -25,18 +25,15 @@ def Back(parameters: list):
     return back
 
 
-def zero(tensor: Tensor):
-    if tensor.gradable:
-        tensor.grad = 0.
-    if isinstance(loss := tensor, Loss):
-        loss.grad = 1.
-
-
-def leaf(tensor: Tensor):
-    if isinstance(tensor, Parameter):
-        print(f"parameter: {tensor}")
-    elif isinstance(tensor, Variable):
-        print(f"variable: {tensor}")
+def Zero(root: bool = True):
+    def zero(tensor: Tensor):
+        nonlocal root
+        if root:
+            tensor.grad = 1.
+            root = False
+        elif tensor.gradable:
+            tensor.grad = 0.
+    return zero
 
 
 def Walk(nodes: list[str], edges: list[tuple[str, str]]):
@@ -152,9 +149,29 @@ class CrossEntropy(Loss):
         )
 
 
+class Ridge(Loss):
+
+    def __init__(self, parameter: Parameter):
+        super().__init__(item(summation(parameter**2)))
+
+
+class Lasso(Loss):
+
+    def __init__(self, parameter: Parameter):
+        super().__init__(item(summation(absolute(parameter))))
+
+
 def squared_error(prediction: Operator, target: Variable):
     return SquaredError(prediction, target)
 
 
 def cross_entropy(prediction: Operator, target: Variable):
     return CrossEntropy(prediction, target)
+
+
+def ridge(parameter: Parameter):
+    return Ridge(parameter)
+
+
+def lasso(parameter: Parameter):
+    return Lasso(parameter)

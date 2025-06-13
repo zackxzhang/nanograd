@@ -61,19 +61,19 @@ class Tensor(ABC):
 
     @verify_operands
     def __add__(self, other):
-        return Sum(self, other)
+        return Plus(self, other)
 
     @verify_operands
     def __radd__(self, other):
-        return Sum(other, self)
+        return Plus(other, self)
 
     @verify_operands
     def __sub__(self, other):
-        return Difference(self, other)
+        return Minus(self, other)
 
     @verify_operands
     def __rsub__(self, other):
-        return Difference(other, self)
+        return Minus(other, self)
 
     @verify_operands
     def __mul__(self, other):
@@ -85,11 +85,11 @@ class Tensor(ABC):
 
     @verify_operands
     def __matmul__(self, other):
-        return MatrixProduct(self, other)
+        return MatMul(self, other)
 
     @verify_operands
     def __rmatmul__(self, other):
-        return MatrixProduct(other, self)
+        return MatMul(other, self)
 
     @verify_operands
     def __truediv__(self, other):
@@ -207,7 +207,7 @@ class BinaryOperator(Operator):
             return False
 
 
-class Sum(BinaryOperator):
+class Plus(BinaryOperator):
 
     def __init__(self, operand_1: Tensor, operand_2: Tensor):
         super().__init__(operand_1, operand_2)
@@ -226,7 +226,7 @@ class Sum(BinaryOperator):
             self.operand_2.grad += v
 
 
-class Difference(BinaryOperator):
+class Minus(BinaryOperator):
 
     def __repr__(self) -> str:
         return f'({self.operand_1} - {self.operand_2})'
@@ -260,7 +260,7 @@ class Product(BinaryOperator):
             self.operand_2.grad += v * j
 
 
-class MatrixProduct(BinaryOperator):
+class MatMul(BinaryOperator):
 
     def __repr__(self) -> str:
         return f'({self.operand_1} @ {self.operand_2})'
@@ -331,6 +331,35 @@ class Transpose(UnaryOperator):
     def vjp(self, v: np.ndarray):
         if self.operand.gradable:
             self.operand.grad += v.T
+
+
+class Absolute(UnaryOperator):
+
+    def __repr__(self) -> str:
+        return f'|{self.operand}|'
+
+    @property
+    def val(self):
+        return np.abs(self.operand.val)
+
+    def vjp(self, v: np.ndarray):
+        if self.operand.gradable:
+            self.operand.grad += v * np.sign(self.operand.val)
+
+
+class Summation(UnaryOperator):
+
+    def __repr__(self) -> str:
+        return f'mean({self.operand})'
+
+    @property
+    def val(self):
+        return np.mean(self.operand.val, axis=0, keepdims=False)
+
+    def vjp(self, v: np.ndarray):
+        if self.operand.gradable:
+            n = self.operand.val.shape[0]
+            self.operand.grad += np.tile(v.T, (n,) + (1,) * v.ndim)
 
 
 class Mean(UnaryOperator):
@@ -464,6 +493,14 @@ class Softmax(UnaryOperator):
             outer_s = np.einsum('bi,bj->bij', s, s)
             j = diag_s - outer_s
             self.operand.grad += v * j
+
+
+def absolute(tensor: Tensor) -> Operator:
+    return Absolute(tensor)
+
+
+def summation(tensor: Tensor) -> Operator:
+    return Summation(tensor)
 
 
 def mean(tensor: Tensor) -> Operator:
