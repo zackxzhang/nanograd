@@ -5,7 +5,8 @@
 [![License](https://img.shields.io/github/license/zackxzhang/nanograd)](https://opensource.org/licenses/BSD-3-Clause)
 [![Last Commit](https://img.shields.io/github/last-commit/zackxzhang/nanograd)](https://github.com/zackxzhang/nanograd)
 
-**nanograd** is a conceptual implementation of automatic differentiation
+#### concept
+**nanograd** is a conceptual prototype of automatic differentiation
 
 - illustrate fundamental principles behind differentiable programming
     - **nanograd** resembles Torch (dynamic, global, object-oriented)
@@ -15,7 +16,7 @@
     - branches: operators that compose parameters, variables and other operators
 
 
-#### example
+#### examples
 - lasso regression [here](./ols.py)
 ```python
 # model
@@ -53,4 +54,32 @@ for _ in range(800):
     params: list[Parameter] = list()
     trace(loss, Back(params))
     optim.step(params)
+```
+- computational graph [here](./vis.py)
+```
++-- (((x @ w) - t)^2 + (λ * ((Σ|w|))))
+    |-> (λ * ((Σ|w|)))
+    |   |-> ((Σ|w|))
+    |   |   !
+    |   |   (Σ|w|)
+    |   |   !
+    |   |   Σ|w|
+    |   |   !
+    |   |   |w|
+    |   |   !
+    |   |   w <- (x @ w)
+    |   L-> λ
+    L-> ((x @ w) - t)^2
+        !
+        (mean(((t - (x @ w))^2)))
+        !
+        mean(((t - (x @ w))^2))
+        !
+        ((t - (x @ w))^2)
+        !
+        (t - (x @ w))
+        |-> (x @ w)
+        |   |-> x
+        |   L->  ...
+        L-> t
 ```

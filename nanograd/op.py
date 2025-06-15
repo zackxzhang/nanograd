@@ -303,7 +303,7 @@ class Power(UnaryOperator):
         self._exponent = exponent
 
     def __repr__(self) -> str:
-        return f'({self.operand} ** {self.exponent})'
+        return f'({self.operand}^{self.exponent})'
 
     @property
     def exponent(self):
@@ -350,11 +350,11 @@ class Absolute(UnaryOperator):
 class Summation(UnaryOperator):
 
     def __repr__(self) -> str:
-        return f'mean({self.operand})'
+        return f'Σ{self.operand}'
 
     @property
     def val(self):
-        return np.mean(self.operand.val, axis=0, keepdims=False)
+        return np.sum(self.operand.val, axis=0, keepdims=False)
 
     def vjp(self, v: np.ndarray):
         if self.operand.gradable:
@@ -380,7 +380,7 @@ class Mean(UnaryOperator):
 class Item(UnaryOperator):
 
     def __repr__(self) -> str:
-        return f'item({self.operand})'
+        return f'({self.operand})'
 
     @property
     def val(self):

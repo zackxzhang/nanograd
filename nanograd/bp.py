@@ -111,15 +111,6 @@ def trace(tensor: Tensor, hook: Callable):
 
 class Loss(UnaryOperator):
 
-    y: Operator
-    t: Variable
-
-    def __repr__(self) -> str:
-        return (
-            self.__class__.__name__ +
-            f"(prediction={self.y}, target={self.t})"
-        )
-
     @property
     def val(self):
         return self.operand.val
@@ -131,6 +122,9 @@ class Loss(UnaryOperator):
 
 class SquaredError(Loss):
 
+    def __repr__(self) -> str:
+        return f"({self.y} - {self.t})^2"
+
     def __init__(self, prediction: Operator, target: Variable):
         self.y = prediction
         self.t = target
@@ -138,6 +132,9 @@ class SquaredError(Loss):
 
 
 class CrossEntropy(Loss):
+
+    def __repr__(self) -> str:
+        return f"CrossEntropy({self.y}, {self.t})"
 
     def __init__(self, prediction: Operator, target: Variable):
         self.y = prediction
@@ -151,11 +148,17 @@ class CrossEntropy(Loss):
 
 class Ridge(Loss):
 
+    def __repr__(self) -> str:
+        return f'({self.operand})'
+
     def __init__(self, parameter: Parameter):
         super().__init__(item(summation(parameter**2)))
 
 
 class Lasso(Loss):
+
+    def __repr__(self) -> str:
+        return f'({self.operand})'
 
     def __init__(self, parameter: Parameter):
         super().__init__(item(summation(absolute(parameter))))
