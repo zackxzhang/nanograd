@@ -1,4 +1,4 @@
-from .op import Variable, Parameter
+from .op import Tensor, Variable, Parameter
 from .bp import Optimizer, trace, Zero, Back, Walk
 from .fn import (
     exp, log, relu, tanh, sigmoid, softmax,
@@ -7,4 +7,4 @@ from .fn import (
 )
 
 
-__version__ = '0.2.3'
+__version__ = '0.2.4'

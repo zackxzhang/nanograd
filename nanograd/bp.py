@@ -127,8 +127,8 @@ class SquaredError(Loss):
 
     def __init__(self, prediction: Operator, target: Variable):
         self.y = prediction
-        self.t = target
-        super().__init__(item(mean((self.t - self.y) ** 2)))
+        self.t = target if isinstance(target, Variable) else Variable(target)
+        super().__init__(item(mean((self.t - self.y) ** 2, axis=0)))
 
 
 class CrossEntropy(Loss):
@@ -136,14 +136,25 @@ class CrossEntropy(Loss):
     def __repr__(self) -> str:
         return f"CrossEntropy({self.y}, {self.t})"
 
-    def __init__(self, prediction: Operator, target: Variable):
+    def __init__(
+        self,
+        prediction: Operator,
+        target: Variable,
+        multiclass: bool = False,
+    ):
         self.y = prediction
-        self.t = target
-        super().__init__(
-            - item( mean(
-                self.t * log(self.y) + (1.-self.t) * log(1.-self.y)
+        self.t = target if isinstance(target, Variable) else Variable(target)
+        if multiclass:  # one-hot vector encoding
+            op = - item( mean(
+                summation(self.t * log(self.y), axis=-1),
+                axis=0,
             ) )
-        )
+        else:  # 0-1 scalar encoding
+            op = - item( mean(
+                self.t * log(self.y) + (1. - self.t) * log(1. - self.y),
+                axis=0,
+            ) )
+        super().__init__(op)
 
 
 class Ridge(Loss):
@@ -168,8 +179,12 @@ def squared_error(prediction: Operator, target: Variable):
     return SquaredError(prediction, target)
 
 
-def cross_entropy(prediction: Operator, target: Variable):
-    return CrossEntropy(prediction, target)
+def cross_entropy(
+    prediction: Operator,
+    target: Variable,
+    multiclass: bool = False,
+):
+    return CrossEntropy(prediction, target, multiclass=multiclass)
 
 
 def ridge(parameter: Parameter):

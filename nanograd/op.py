@@ -129,6 +129,9 @@ class Variable(Tensor):
     def __repr__(self) -> str:
         return self._tag
 
+    def __getitem__(self, key):
+        return Variable(self.val[key], f'{self}[{key}]')
+
     @property
     def gradable(self):
         return False
@@ -190,6 +193,7 @@ class BinaryOperator(Operator):
     def __init__(self, operand_1: Tensor, operand_2: Tensor):
         self._operand_1 = operand_1
         self._operand_2 = operand_2
+        # todo: support broadcasting for binary operators other than `@`
 
     @property
     def operand_1(self) -> Tensor:
@@ -224,7 +228,6 @@ class Plus(BinaryOperator):
             self.operand_1.grad += v
         if self.operand_2.gradable:
             self.operand_2.grad += v
-        # todo: support broadcasting
 
 
 class Minus(BinaryOperator):
@@ -241,7 +244,6 @@ class Minus(BinaryOperator):
             self.operand_1.grad += v
         if self.operand_2.gradable:
             self.operand_2.grad -= v
-        # todo: support broadcasting
 
 
 class Product(BinaryOperator):
@@ -260,7 +262,6 @@ class Product(BinaryOperator):
         if self.operand_2.gradable:
             j = self.operand_1.val
             self.operand_2.grad += v * j
-        # todo: support broadcasting
 
 
 class MatMul(BinaryOperator):
@@ -367,12 +368,13 @@ class Summation(UnaryOperator):
 
     @property
     def val(self):
-        return np.sum(self.operand.val, axis=self.axis, keepdims=False)
+        return np.sum(self.operand.val, axis=self.axis, keepdims=True)
 
     def vjp(self, v: np.ndarray):
         if self.operand.gradable:
-            d = self.operand.val.ndim
-            n = self.operand.val.shape[self.axis]
+            a = self.operand.val
+            d = a.ndim
+            n = a.shape[self.axis]
             self.operand.grad += np.tile(v, _dims(d, self.axis, n))
 
 
@@ -387,12 +389,13 @@ class Mean(UnaryOperator):
 
     @property
     def val(self):
-        return np.mean(self.operand.val, axis=self.axis, keepdims=False)
+        return np.mean(self.operand.val, axis=self.axis, keepdims=True)
 
     def vjp(self, v: np.ndarray):
         if self.operand.gradable:
-            d = self.operand.val.ndim
-            n = self.operand.val.shape[self.axis]
+            a = self.operand.val
+            d = a.ndim
+            n = a.shape[self.axis]
             self.operand.grad += np.tile(v / n, _dims(d, self.axis, n))
 
 
@@ -506,12 +509,16 @@ class Softmax(UnaryOperator):
 
     def vjp(self, v: np.ndarray):
         if self.operand.gradable:
-            n = len(self.operand)
             s = self.val
+            n = s.shape[-1]
+            # i.  (class,)
+            # diag_s = np.einsum('i,ij->ij', s, np.eye(n))
+            # outer_s = np.einsum('i,j->ij', s, s)
+            # ii. (batch, class)
             diag_s = np.einsum('bi,ij->bij', s, np.eye(n))
             outer_s = np.einsum('bi,bj->bij', s, s)
             j = diag_s - outer_s
-            self.operand.grad += v * j
+            self.operand.grad += np.einsum('bji,bj->bi', j, v)
 
 
 def absolute(tensor: Tensor) -> Operator:
