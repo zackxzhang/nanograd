@@ -55,6 +55,23 @@ for _ in range(800):
     trace(loss, Back(params))
     optim.step(params)
 ```
+- gated recurrent network [here](./gru.py)
+```python
+...
+
+def gru(x, e, h, Wz, Uz, bz, Wr, Ur, br, Wh, Uh, bh):
+    z = sigmoid(x @ Wz + h @ Uz + e @ bz)
+    r = sigmoid(x @ Wr + h @ Ur + e @ br)
+    c = tanh(x @ Wh + (r * h) @ Uh + e @ bh)
+    return (1. - z) * h + z * c
+
+def clf(x, e, W, b):
+    logits = x @ W + e @ b
+    probs = softmax(logits)
+    return probs
+
+...
+```
 - computational graph [here](./vis.py)
 ```
 +-- (((x @ w) - t)^2 + (λ * ((Σ|w|))))
