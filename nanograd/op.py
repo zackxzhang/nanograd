@@ -1,6 +1,7 @@
 import numpy as np                                                # type: ignore
 from abc import ABC, abstractmethod
 from functools import wraps
+from .ca import cache
 
 
 class VariableTagger:
@@ -136,7 +137,7 @@ class Variable(Tensor):
     def gradable(self):
         return False
 
-    @property
+    @cache
     def val(self):
         return self._val
 
@@ -159,7 +160,7 @@ class Parameter(Tensor):
     def gradable(self):
         return True
 
-    @property
+    @cache
     def val(self):
         return self._val
 
@@ -219,7 +220,7 @@ class Plus(BinaryOperator):
     def __repr__(self) -> str:
         return f'({self.operand_1} + {self.operand_2})'
 
-    @property
+    @cache
     def val(self):
         return self.operand_1.val + self.operand_2.val
 
@@ -235,7 +236,7 @@ class Minus(BinaryOperator):
     def __repr__(self) -> str:
         return f'({self.operand_1} - {self.operand_2})'
 
-    @property
+    @cache
     def val(self):
         return self.operand_1.val - self.operand_2.val
 
@@ -251,7 +252,7 @@ class Product(BinaryOperator):
     def __repr__(self) -> str:
         return f'({self.operand_1} * {self.operand_2})'
 
-    @property
+    @cache
     def val(self):
         return self.operand_1.val * self.operand_2.val
 
@@ -269,7 +270,7 @@ class MatMul(BinaryOperator):
     def __repr__(self) -> str:
         return f'({self.operand_1} @ {self.operand_2})'
 
-    @property
+    @cache
     def val(self):
         return self.operand_1.val @ self.operand_2.val
 
@@ -287,7 +288,7 @@ class Quotient(BinaryOperator):
     def __repr__(self) -> str:
         return f'({self.operand_1} / {self.operand_2})'
 
-    @property
+    @cache
     def val(self):
         return self.operand_1.val / self.operand_2.val
 
@@ -313,7 +314,7 @@ class Power(UnaryOperator):
     def exponent(self):
         return self._exponent
 
-    @property
+    @cache
     def val(self):
         return self.operand.val ** self.exponent
 
@@ -328,7 +329,7 @@ class Transpose(UnaryOperator):
     def __repr__(self) -> str:
         return f'{self.operand}.T'
 
-    @property
+    @cache
     def val(self):
         return self.operand.val.T
 
@@ -342,7 +343,7 @@ class Absolute(UnaryOperator):
     def __repr__(self) -> str:
         return f'|{self.operand}|'
 
-    @property
+    @cache
     def val(self):
         return np.abs(self.operand.val)
 
@@ -366,7 +367,7 @@ class Summation(UnaryOperator):
     def __repr__(self) -> str:
         return f'Σ{self.operand}'
 
-    @property
+    @cache
     def val(self):
         return np.sum(self.operand.val, axis=self.axis, keepdims=True)
 
@@ -387,7 +388,7 @@ class Mean(UnaryOperator):
     def __repr__(self) -> str:
         return f'mean({self.operand})'
 
-    @property
+    @cache
     def val(self):
         return np.mean(self.operand.val, axis=self.axis, keepdims=True)
 
@@ -404,7 +405,7 @@ class Item(UnaryOperator):
     def __repr__(self) -> str:
         return f'({self.operand})'
 
-    @property
+    @cache
     def val(self):
         return self.operand.val.item()
 
@@ -418,7 +419,7 @@ class Logarithm(UnaryOperator):
     def __repr__(self) -> str:
         return f'log({self.operand})'
 
-    @property
+    @cache
     def val(self):
         return np.log(self.operand.val)
 
@@ -433,7 +434,7 @@ class Exponential(UnaryOperator):
     def __repr__(self) -> str:
         return f'exp({self.operand})'
 
-    @property
+    @cache
     def val(self):
         return np.exp(self.operand.val)
 
@@ -448,7 +449,7 @@ class ReLU(UnaryOperator):
     def __repr__(self) -> str:
         return f'relu({self.operand})'
 
-    @property
+    @cache
     def val(self):
         return np.maximum(self.operand.val, 0.)
 
@@ -463,7 +464,7 @@ class TanH(UnaryOperator):
     def __repr__(self) -> str:
         return f'tanh({self.operand})'
 
-    @property
+    @cache
     def val(self):
         return np.tanh(self.operand.val)
 
@@ -482,7 +483,7 @@ class Sigmoid(UnaryOperator):
     def __repr__(self) -> str:
         return f'sigmoid({self.operand})'
 
-    @property
+    @cache
     def val(self):
         return _sigmoid(self.operand.val)
 
@@ -503,7 +504,7 @@ class Softmax(UnaryOperator):
     def __repr__(self) -> str:
         return f'softmax({self.operand})'
 
-    @property
+    @cache
     def val(self):
         return _softmax(self.operand.val)
 

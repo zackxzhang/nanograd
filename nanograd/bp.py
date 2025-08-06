@@ -1,5 +1,6 @@
 import numpy as np                                                # type: ignore
 from typing import Callable
+from .ca import clear
 from .op import (
     Tensor, Operator, UnaryOperator, BinaryOperator,
     Variable, Parameter, log, summation, mean, absolute, item,
@@ -14,6 +15,7 @@ class Optimizer:
     def step(self, parameters: list[Parameter]):
         for param in parameters:
             param._val -= param.grad * self.alpha
+        clear()
 
 
 def Back(parameters: list):
