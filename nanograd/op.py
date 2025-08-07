@@ -4,6 +4,9 @@ from functools import wraps
 from .ca import cache
 
 
+eps = 1e-12
+
+
 class VariableTagger:
 
     counter: int = 0
@@ -294,7 +297,7 @@ class Quotient(BinaryOperator):
 
     def vjp(self, v: np.ndarray):
         if self.operand_1.gradable:
-            j = 1 / self.operand_2.val
+            j = 1. / self.operand_2.val
             self.operand_1.grad += v * j
         if self.operand_2.gradable:
             j = - self.operand_1.val / self.operand_2.val ** 2
@@ -421,11 +424,11 @@ class Logarithm(UnaryOperator):
 
     @cache
     def val(self):
-        return np.log(self.operand.val)
+        return np.log(self.operand.val + eps)
 
     def vjp(self, v: np.ndarray):
         if self.operand.gradable:
-            j = 1 / self.operand.val
+            j = 1. / (self.operand.val + eps)
             self.operand.grad += v * j
 
 
@@ -475,7 +478,8 @@ class TanH(UnaryOperator):
 
 
 def _sigmoid(x):
-    return 1. / (1. + np.exp(-x))
+    z = np.exp(-np.abs(x))
+    return np.where(x >= 0, 1. / (1. + z), z / (1. + z))
 
 
 class Sigmoid(UnaryOperator):
