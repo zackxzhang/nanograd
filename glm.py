@@ -1,7 +1,7 @@
 import numpy as np                                                # type: ignore
 from nanograd import (
     Variable, Parameter, sigmoid, cross_entropy,
-    Optimizer, trace, Zero, Back,
+    Optimizer, trace, Zero, Back, ConstantSchedule,
 )
 from util import RandomSeed
 
@@ -29,7 +29,7 @@ y = sigmoid(x @ w)
 
 
 # make optimizer
-optim = Optimizer(alpha=0.5)
+optim = Optimizer(alpha=ConstantSchedule(0.2))
 
 
 # before training

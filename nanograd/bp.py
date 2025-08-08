@@ -1,6 +1,7 @@
 import numpy as np                                                # type: ignore
 from typing import Callable
 from .ca import clear
+from .lr import Schedule, ConstantSchedule
 from .op import (
     Tensor, Operator, UnaryOperator, BinaryOperator,
     Variable, Parameter, log, summation, mean, absolute, item,
@@ -9,18 +10,23 @@ from .op import (
 
 class Optimizer:
 
-    def __init__(self, alpha: float = 1e-3, max_grad_norm: float = 1.0):
+    def __init__(
+        self,
+        alpha: Schedule = ConstantSchedule(1e-3),
+        max_grad_norm: float = 1.0
+    ):
         self.alpha = alpha
         self.max_grad_norm = max_grad_norm
 
     def step(self, parameters: list[Parameter]):
+        alpha = self.alpha()
         grads = [param.grad for param in parameters]
         grad_norm = np.sqrt(sum(np.sum(g**2) for g in grads))
         if grad_norm > self.max_grad_norm:
             scale = self.max_grad_norm / grad_norm
             grads = [grad * scale for grad in grads]
         for grad, param in zip(grads, parameters):
-            param._val -= param.grad * self.alpha
+            param._val -= param.grad * alpha
         clear()
 
 

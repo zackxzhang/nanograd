@@ -1,7 +1,7 @@
 import numpy as np                                                # type: ignore
 from nanograd import (
     Variable, Parameter, squared_error, lasso,
-    Optimizer, trace, Zero, Back,
+    Optimizer, trace, Zero, Back, ConstantSchedule,
 )
 from util import RandomSeed
 
@@ -29,7 +29,7 @@ y = x @ w
 
 
 # make optimizer
-optim = Optimizer(alpha=0.1)
+optim = Optimizer(alpha=ConstantSchedule(0.1))
 
 
 # before training

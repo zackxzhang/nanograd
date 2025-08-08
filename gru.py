@@ -3,14 +3,14 @@ from util import RandomSeed
 from nanograd import (
     Tensor, Variable, Parameter,
     sigmoid, tanh, softmax, cross_entropy,
-    Optimizer, trace, Zero, Back,
+    Optimizer, trace, Zero, Back, CosineSchedule,
 )
 from nanograd.op import _sigmoid, _softmax
 
 
 # recurrent network settings
-T = 4     # time steps
-I = 196   # input pixels
+T = 7     # time steps
+I = 112   # input pixels
 O = 10    # output classes
 H1 = 256  # hidden dimension (layer 1)
 H2 = 256  # hidden dimension (layer 2)
@@ -101,13 +101,13 @@ def rnn(X, weights):
 
 
 # data & training settings
-mnist = np.load('mnist.npz')
+mnist = np.load('data/mnist.npz')
 X = mnist['x_train']  # (batch, time, feature)
 Y = mnist['y_train']  # (batch, class)
 N = len(X)  # data size
 n = 64      # batch size
-S = 3000    # training steps
-optim = Optimizer(alpha=1e-2)
+S = 50_000  # training steps
+optim = Optimizer(alpha=CosineSchedule(S, 1e-2, 1e-4))
 
 
 # training
