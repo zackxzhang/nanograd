@@ -105,15 +105,14 @@ mnist = np.load('mnist.npz')
 X = mnist['x_train']  # (batch, time, feature)
 Y = mnist['y_train']  # (batch, class)
 N = len(X)  # data size
-n = 32      # batch size
-S = 100     # training steps
-optim = Optimizer(alpha=1e-5)
+n = 64      # batch size
+S = 3000    # training steps
+optim = Optimizer(alpha=1e-2)
 
 
 # training
 with RandomSeed(4) as rng:
-    for s in range(10):
-        print(f"step {s}")
+    for s in range(S):
         idx = rng.choice(N, n, replace=False)
         x, t = Variable(X[idx]), Variable(Y[idx])
         y = rnn(x, weights)
@@ -129,7 +128,7 @@ with RandomSeed(4) as rng:
 X = mnist['x_test']
 Y = mnist['y_test']
 N = len(X)  # data size
-n = 100     # batch size
+n = 200     # batch size
 
 
 # testing
@@ -141,4 +140,4 @@ while i < N:
     y = rnn(x, weights).val
     c += np.sum(np.argmax(t, axis=1) == np.argmax(y, axis=1))
     i += n
-print(f"accuracy={c / N:.6f}")
+print(f"accuracy={c / N:.2%}")

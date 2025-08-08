@@ -5,7 +5,8 @@
 [![License](https://img.shields.io/github/license/zackxzhang/nanograd)](https://opensource.org/licenses/BSD-3-Clause)
 [![Last Commit](https://img.shields.io/github/last-commit/zackxzhang/nanograd)](https://github.com/zackxzhang/nanograd)
 
-#### concept
+
+### Concept
 **nanograd** is a conceptual prototype of automatic differentiation
 
 - illustrate fundamental principles behind differentiable programming
@@ -16,7 +17,7 @@
     - branches: operators that compose parameters, variables and other operators
 
 
-#### examples
+### Examples
 - lasso regression [here](./ols.py)
 ```python
 # model
