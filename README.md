@@ -101,3 +101,4 @@ def clf(x, e, W, b):
         |   L->  ...
         L-> t
 ```
+![computational graph](./figures/comp-graph.png)
