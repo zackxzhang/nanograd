@@ -1,6 +1,6 @@
 from .op import Tensor, Variable, Parameter
 from .bp import Optimizer, trace, Zero, Back, Walk
-from .lr import ConstantSchedule, CosineSchedule
+from .lr import ConstantSchedule, LinearSchedule, CosineSchedule
 from .fn import (
     exp, log, relu, tanh, sigmoid, softmax,
     squared_error, cross_entropy, ridge, lasso,
@@ -8,4 +8,4 @@ from .fn import (
 )
 
 
-__version__ = '0.3.1'
+__version__ = '0.3.2'
