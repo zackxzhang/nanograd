@@ -5,17 +5,25 @@
 [![License](https://img.shields.io/github/license/zackxzhang/nanograd)](https://opensource.org/licenses/BSD-3-Clause)
 [![Last Commit](https://img.shields.io/github/last-commit/zackxzhang/nanograd)](https://github.com/zackxzhang/nanograd)
 
+<br>
 
 ### Concept
-**nanograd** is a conceptual prototype of automatic differentiation
+**nanograd** is a conceptual prototype of automatic differentiation that
 
-- illustrate fundamental principles behind differentiable programming
-    - **nanograd** resembles Torch (dynamic, global, object-oriented)
-    - ... more than it resembles Jax (static, local, functional)
-- trace gradients through the directed acyclic graph of tensors and operators
-    - leaves: parameters (tensors with gradient) and variables (tensors w.o. gradient)
-    - branches: operators that compose parameters, variables and other operators
+- illustrates fundamental principles behind **differentiable programming**
+    - traces gradients through the directed acyclic graph of tensors and operators
+- simply works in 1000 lines of code (smoke tested with **RNN on MNIST**)
+    - achieves 90%+ accuracy with simple initialization, vanilla SGD, and no normalization
 
+#### design
+- **nanograd** resembles Torch (dynamic, global, object-oriented)
+- ... more than it resembles Jax (static, local, functional)
+
+#### structure
+- leaves: parameters (tensors with gradient) and variables (tensors w.o. gradient)
+- branches: operators that compose together parameters, variables and other operators
+
+<br>
 
 ### Examples
 - lasso regression [here](./ols.py)
