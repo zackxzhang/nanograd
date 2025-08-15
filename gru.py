@@ -3,9 +3,9 @@ from util import RandomSeed
 from nanograd import (
     Tensor, Variable, Parameter,
     sigmoid, tanh, softmax, cross_entropy,
-    Optimizer, trace, Zero, Back, CosineSchedule,
+    Optimizer, trace, Zero, Back,
+    LinearSchedule, CosineSchedule,
 )
-from nanograd.op import _sigmoid, _softmax
 
 
 # recurrent network settings
@@ -100,14 +100,15 @@ def rnn(X, weights):
     return y
 
 
-# data & training settings
+# training settings
 mnist = np.load('data/mnist.npz')
 X = mnist['x_train']  # (batch, time, feature)
 Y = mnist['y_train']  # (batch, class)
 N = len(X)  # data size
-n = 64      # batch size
-S = 50_000  # training steps
-optim = Optimizer(alpha=CosineSchedule(S, 1e-2, 1e-4))
+n = 32      # batch size
+S = 100_000  # training steps
+alpha = LinearSchedule(1_000, 1e-8, 1e-2) + CosineSchedule(S, 1e-2, 1e-5)
+optim = Optimizer(alpha=alpha)
 
 
 # training
